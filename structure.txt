@@ -1,0 +1,21 @@
+CV_assignment_1/
+├─ README.md
+├─ requirements.txt
+├─ data/
+│  ├─ images_calib/          # calibration photos
+├─ outputs/
+│  ├─ calib/                 # saved K, dist, etc.
+│  └─ viz/                   # debug images (corners drawn, axes, box, etc.)
+└─ scr/
+   ├─ main.py                # runs the pipeline
+   ├─ config.py 
+   ├─ io_utils.py
+   ├─ calibration/
+   │  ├─ calibrate.py 
+   │  ├─ object_points.py
+   │  └─ save_load.py
+   ├─ detection/
+   │  └─ manual_corners.py    # gets the four corners by the clics of the mouse
+   ├─ pose/
+      ├─ solve_pnp.py
+      └─ draw.py
