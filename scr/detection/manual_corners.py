@@ -49,8 +49,8 @@ def get_manual_corners(image: np.ndarray, pattern_size: tuple[int, int]):
 
     tl_idx = np.argmin(s)
     br_idx = np.argmax(s)
-    tr_idx = np.argmin(diff)
-    bl_idx = np.argmax(diff)
+    tr_idx = np.argmax(diff)
+    bl_idx = np.argmin(diff)
 
     tl = pts[tl_idx]
     br = pts[br_idx]
