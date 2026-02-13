@@ -1,4 +1,4 @@
-import cv2
+import cv2 
 import numpy as np
 
 def get_manual_corners(image: np.ndarray, pattern_size: tuple[int, int]):
@@ -74,17 +74,4 @@ def get_manual_corners(image: np.ndarray, pattern_size: tuple[int, int]):
     corners = np.array(grid, dtype=np.float32)
     corners = corners.reshape(-1, 1, 2)
 
-    return corners
-
-
-
-
-
-
-   
-
-    
-
-
-            
-        
+    return corners 
