@@ -19,7 +19,7 @@ objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane
 
 pattern_size = (9, 6) # number of intern corners are squares -1, so for our chessboard is 9, 6
-square_size = 0.021 # lenght of the squares converted to meters 
+square_size = 0.017 # lenght of the squares converted to meters 
 
 # creating an empty 3d matrix of the chessboard 
 objp = np.zeros((pattern_size[0]*pattern_size[1], 3), np.float32) 
