@@ -62,7 +62,7 @@ cv2.destroyAllWindows()
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
 # testing
-test = cv2.imread("data/test_image/test.jpg")
+test = cv2.imread("data/test_image/test.jpeg")
 gray_t = cv2.cvtColor(test, cv2.COLOR_BGR2GRAY)
 ret_t, corners_t = cv2.findChessboardCorners(gray_t, pattern_size, None)
 
