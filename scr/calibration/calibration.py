@@ -47,6 +47,11 @@ for fname in images:
         corners2 = get_manual_corners(img, pattern_size)  
         if corners2 is not None:
             corners2 = cv2.cornerSubPix(gray, corners2, (11,11), (-1,-1), criteria)  
+        if corners2 is None:
+            print("FAILED:", fname)
+            continue
+        else:
+            print("OK:", fname)
 
     imgpoints.append(corners2)
     objpoints.append(objp)
@@ -58,11 +63,8 @@ for fname in images:
  
 cv2.destroyAllWindows()
 
-# calibration
-ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
-
 # testing
-test = cv2.imread("data/test_image/test.jpeg")
+test = cv2.imread("data/test_image/test.jpg")
 gray_t = cv2.cvtColor(test, cv2.COLOR_BGR2GRAY)
 ret_t, corners_t = cv2.findChessboardCorners(gray_t, pattern_size, None)
 
@@ -82,3 +84,63 @@ cv2.imwrite("test_corners_detected.png", temp_test)
 cv2.imshow("test corners detected", temp_test)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
+run1_obj, run1_img = [], []
+run2_obj, run2_img = [], []
+run3_obj, run3_img = [], []
+
+auto_counter = 0
+manual_counter = 0
+
+for fname, objp_i, imgp_i in zip(images, objpoints, imgpoints):
+
+    is_manual = "_manual" in fname
+
+    #Run 1: all images
+    run1_obj.append(objp_i)
+    run1_img.append(imgp_i)
+
+    #Run 2: first 5 auto + first 5 manual
+    if is_manual and manual_counter < 5:
+        run2_obj.append(objp_i)
+        run2_img.append(imgp_i)
+        manual_counter += 1
+
+    if not is_manual and auto_counter < 5:
+        run2_obj.append(objp_i)
+        run2_img.append(imgp_i)
+        auto_counter += 1
+
+#Run 3: first 5 auto
+auto_counter = 0
+for fname, objp_i, imgp_i in zip(images, objpoints, imgpoints):
+    is_manual = "_manual" in fname
+    if not is_manual and auto_counter < 5:
+        run3_obj.append(objp_i)
+        run3_img.append(imgp_i)
+        auto_counter += 1
+
+
+#calibrate and print
+def do_calibration(name, obj, img):
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
+        obj, img, gray.shape[::-1], None, None
+    )
+
+    print(f"\n{name}")
+    print("Images used:", len(obj))
+    print("Camera matrix:\n", mtx)
+    print("Distortion:\n", dist.ravel())
+
+    np.savez(f"{name}.npz",
+             cameraMatrix=mtx,
+             distCoeffs=dist,
+             rvecs=rvecs,
+             tvecs=tvecs)
+    print(f"Saved calibration to {name}.npz")
+
+
+
+do_calibration("run1_all_images", run1_obj, run1_img)
+do_calibration("run2_5auto_5manual", run2_obj, run2_img)
+do_calibration("run3_5auto_only", run3_obj, run3_img)
