@@ -1,3 +1,5 @@
+# OFF-LINE PHASE
+
 import os
 import sys
 print("CWD:", os.getcwd())
@@ -8,7 +10,88 @@ sys.path.insert(0, PROJECT_ROOT)
 import cv2
 import numpy as np
 import glob
-from scr.detection.manual_corners import get_manual_corners
+
+def get_manual_corners(image: np.ndarray, pattern_size: tuple[int, int]):
+
+# This function implements the manual detection of the corners by clicking on the four external inner corners of the chessboard and performing a linear interpolation
+# it returns all the interpolated corner grid as np.array
+
+
+    original = image.copy() # in case the user wants to reset 
+    instance = image.copy()
+
+    clicked_points = []
+
+    def click_event(event: int, x: int, y: int, flags: int, params):
+    
+    # This function stores the four clicks of the external inner corners. it was implemented modifying the tutorial by open cv 
+
+        if event == cv2.EVENT_LBUTTONDOWN and len(clicked_points) < 4: # if there are 4 clickes the next clicks are ignored
+            
+            clicked_points.append((x,y))
+            cv2.circle(instance, (x,y), 5, (0, 0, 255), -1) # drawing a little red circel in the click aqrea 
+
+            cv2.imshow("manual corners", instance) # showind the image updated 
+
+    cv2.namedWindow("manual corners", cv2.WINDOW_NORMAL) 
+    cv2.imshow("manual corners", instance)
+
+    cv2.setMouseCallback("manual corners", click_event) # this also follows the quoted tutorial 
+
+    while True: # get all the four points
+        
+        key = cv2.waitKey(20) & 0xFF # waiting for the keyboard to press something
+
+        if key == 27: # in case of ESC, we exit the program
+            cv2.destroyWindow("manual corners")
+            return None 
+
+        if key == ord('r'): # in case the user presser 'r', we reset the image 
+            clicked_points.clear()
+            instance[:] = original # resetting each instance pixel to the original 
+            cv2.imshow("manual corners", instance)
+        
+        if len(clicked_points) == 4: # all the corners have been pressed
+            break
+    
+    cv2.destroyWindow("manual corners") # once we collected all the corners, we can kill the window
+
+    # ordering the points
+
+    pts = np.array(clicked_points, dtype=np.float32)
+    
+    s = pts.sum(axis=1) # summing x + y for each couple 
+    diff = pts[:, 0] - pts[:, 1] # difference x - y for each couple 
+
+    tl_idx = np.argmin(s)
+    br_idx = np.argmax(s)
+    tr_idx = np.argmax(diff)
+    bl_idx = np.argmin(diff)
+
+    tl = pts[tl_idx]
+    br = pts[br_idx]
+    tr = pts[tr_idx]
+    bl = pts[bl_idx]
+
+    # interpolling the grid
+    cols, rows = pattern_size
+
+    grid = []
+    
+    for j in range(rows):
+        for i in range(cols):
+            u = i/(cols-1)
+            v = j/(rows-1)
+            top = (1 - u) * tl + u * tr
+            bottom = (1 - u) * bl + u * br
+            p = (1 - v) * top + v * bottom
+            grid.append(p)
+    
+    corners = np.array(grid, dtype=np.float32)
+    corners = corners.reshape(-1, 1, 2)
+
+    return corners 
+
 
 
 # termination criteria
@@ -30,7 +113,7 @@ objp *= square_size # here we scale for the square size (unlike the tutorial)
 images = glob.glob("data/training_images/*.jpg")
 print("Found images:", images)
 
-
+# loop to detect the corners of the training images (automatically or manually)
 for fname in images:
     img = cv2.imread(fname)          
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  
@@ -121,26 +204,35 @@ for fname, objp_i, imgp_i in zip(images, objpoints, imgpoints):
         auto_counter += 1
 
 
-#calibrate and print
+# This function calibrates the camera and also provides an estimation of the intrinsic values (e.g. the standard deviation) for choice task 4
 def do_calibration(name, obj, img):
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
+
+    ret, mtx, dist, rvecs, tvecs, std_intr, std_ext, per_view_err = cv2.calibrateCameraExtended(
         obj, img, gray.shape[::-1], None, None
     )
 
     print(f"\n{name}")
     print("Images used:", len(obj))
     print("Camera matrix:\n", mtx)
+    print("RMS reprojection error:", ret)
     print("Distortion:\n", dist.ravel())
+
+    print("\nStandard deviation of intrinsic parameters:")
+    print("fx std:", std_intr[0])
+    print("fy std:", std_intr[1])
+    print("cx std:", std_intr[2])
+    print("cy std:", std_intr[3])
 
     np.savez(f"{name}.npz",
              cameraMatrix=mtx,
              distCoeffs=dist,
              rvecs=rvecs,
-             tvecs=tvecs)
+             tvecs=tvecs,
+             stdIntrinsics=std_intr)
     print(f"Saved calibration to {name}.npz")
 
 
-
+# calibrate for the three runs 
 do_calibration("run1_all_images", run1_obj, run1_img)
 do_calibration("run2_5auto_5manual", run2_obj, run2_img)
 do_calibration("run3_5auto_only", run3_obj, run3_img)
