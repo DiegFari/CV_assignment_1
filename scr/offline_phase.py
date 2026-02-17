@@ -1,4 +1,5 @@
 # OFF-LINE PHASE
+# manual corner detection, loop for automatic + manual corner detection, camera calibration with the three runs
 
 import os
 import sys
@@ -128,7 +129,8 @@ for fname in images:
     else:
         print(f"{fname}: manual annotation needed")
         corners2 = get_manual_corners(img, pattern_size)  
-        if corners2 is not None:
+        print(corners2.shape)
+        if corners2 is not None: 
             corners2 = cv2.cornerSubPix(gray, corners2, (11,11), (-1,-1), criteria)  
         if corners2 is None:
             print("FAILED:", fname)
