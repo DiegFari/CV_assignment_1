@@ -3,6 +3,7 @@
 
 import os
 import sys
+print("CWD:", os.getcwd())
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, PROJECT_ROOT)
@@ -23,11 +24,11 @@ def get_manual_corners(image: np.ndarray, pattern_size: tuple[int, int]):
     clicked_points = []
 
     def click_event(event: int, x: int, y: int, flags: int, params):
-    
+
     # This function stores the four clicks of the external inner corners. it was implemented modifying the tutorial by open cv 
 
         if event == cv2.EVENT_LBUTTONDOWN and len(clicked_points) < 4: # if there are 4 clickes the next clicks are ignored
-            
+
             clicked_points.append((x,y))
             cv2.circle(instance, (x,y), 5, (0, 0, 255), -1) # drawing a little red circel in the click aqrea 
 
@@ -39,7 +40,7 @@ def get_manual_corners(image: np.ndarray, pattern_size: tuple[int, int]):
     cv2.setMouseCallback("manual corners", click_event) # this also follows the quoted tutorial 
 
     while True: # get all the four points
-        
+
         key = cv2.waitKey(20) & 0xFF # waiting for the keyboard to press something
 
         if key == 27: # in case of ESC, we exit the program
@@ -50,19 +51,19 @@ def get_manual_corners(image: np.ndarray, pattern_size: tuple[int, int]):
             clicked_points.clear()
             instance[:] = original # resetting each instance pixel to the original 
             cv2.imshow("manual corners", instance)
-        
+
         if len(clicked_points) == 4: # all the corners have been pressed
             break
-    
+
     cv2.destroyWindow("manual corners") # once we collected all the corners, we can kill the window
 
     # ordering the points
 
     pts = np.array(clicked_points, dtype=np.float32)
-    
+
     s = pts.sum(axis=1) # summing x + y for each couple 
-    diff = pts[:, 1] - pts[:, 0]
-  
+    diff = pts[:, 0] - pts[:, 1] # difference x - y for each couple 
+    diff = pts[:, 1] - pts[:, 0] # difference x - y for each couple 
 
     tl_idx = np.argmin(s)
     br_idx = np.argmax(s)
@@ -74,9 +75,20 @@ def get_manual_corners(image: np.ndarray, pattern_size: tuple[int, int]):
     tr = pts[tr_idx]
     bl = pts[bl_idx]
 
+    # interpolling the grid
     # pattern_size = (cols, rows)
     cols, rows = pattern_size
 
+    grid = []
+    
+    for j in range(rows):
+        for i in range(cols):
+            u = i/(cols-1)
+            v = j/(rows-1)
+            top = (1 - u) * tl + u * tr
+            bottom = (1 - u) * bl + u * br
+            p = (1 - v) * top + v * bottom
+            grid.append(p)
     # interpolling the grid
     rows, cols = pattern_size
 
@@ -89,13 +101,15 @@ def get_manual_corners(image: np.ndarray, pattern_size: tuple[int, int]):
         right = tr * (1 - v) + br * v
 
         for col in range(pattern_size[0]):    # left → right
-            u = col / (pattern_size[0] - 1)
+            u = 1.0 - col / (pattern_size[0] - 1)
 
             p = left * (1 - u) + right * u
             points.append(p)
-    
+
+    corners = np.array(grid, dtype=np.float32)
     corners = np.array(points, dtype=np.float32).reshape(-1, 1, 2)
     corners = corners.reshape(-1, 1, 2)
+
     print("TL:", tl, "TR:", tr, "BR:", br, "BL:", bl)
     return corners 
 
@@ -272,6 +286,7 @@ def subset_confidence(objpoints_all, imgpoints_all, image_size, subset_size=10, 
             "mean": float(x.mean()),
             "std": float(x.std(ddof=1)),
         }
+
 
     return {"subset_size": subset_size, "trials": trials, "rms": summarize(rms_list), "fx": summarize(fx_list), "fy": summarize(fy_list), "cx": summarize(cx_list), "cy": summarize(cy_list),}
 
