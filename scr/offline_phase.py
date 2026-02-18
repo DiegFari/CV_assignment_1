@@ -244,3 +244,13 @@ do_calibration("run1_all_images", run1_obj, run1_img)
 do_calibration("run2_5auto_5manual", run2_obj, run2_img)
 do_calibration("run3_5auto_only", run3_obj, run3_img)
 
+# now we are gonna implement choice task 4
+
+def calib_for_choice_4(obj_list, img_list, image_size):
+    # this function returns in order the fxl fy, cx, cy of the performed calibration
+    rms, K, dist, rvecs, tvecs = cv2.calibrateCamera(obj_list, img_list, image_size, None, None)
+    return rms, K[0,0], K[1,1], K[0,2], K[1,2]
+
+
+
+
