@@ -61,7 +61,8 @@ def get_manual_corners(image: np.ndarray, pattern_size: tuple[int, int]):
     pts = np.array(clicked_points, dtype=np.float32)
     
     s = pts.sum(axis=1) # summing x + y for each couple 
-    diff = pts[:, 0] - pts[:, 1]  # x - y for each couple 
+    diff = pts[:, 1] - pts[:, 0]
+  
 
     tl_idx = np.argmin(s)
     br_idx = np.argmax(s)
@@ -148,7 +149,7 @@ for fname in images:
 
     found = ret or (corners2 is not None)
     cv2.drawChessboardCorners(img, pattern_size, corners2, found)
-    cv2.imshow('img', img)
+    cv2.imshow('img', cv2.resize(img, (768, 1024)))
     cv2.waitKey(500)
  
 cv2.destroyAllWindows()
@@ -171,7 +172,7 @@ cv2.drawChessboardCorners(temp_test, pattern_size, corners_t, True)
 cv2.imwrite("test_corners_detected.png", temp_test)
 
 
-cv2.imshow("test corners detected", temp_test)
+cv2.imshow("test corners detected", cv2.resize(temp_test, (768, 1024)))
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
