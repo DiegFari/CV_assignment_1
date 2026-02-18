@@ -3,7 +3,6 @@
 
 import os
 import sys
-print("CWD:", os.getcwd())
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, PROJECT_ROOT)
@@ -62,7 +61,7 @@ def get_manual_corners(image: np.ndarray, pattern_size: tuple[int, int]):
     pts = np.array(clicked_points, dtype=np.float32)
     
     s = pts.sum(axis=1) # summing x + y for each couple 
-    diff = pts[:, 1] - pts[:, 0] # difference x - y for each couple 
+    diff = pts[:, 0] - pts[:, 1]  # x - y for each couple 
 
     tl_idx = np.argmin(s)
     br_idx = np.argmax(s)
@@ -123,7 +122,7 @@ print("Found images:", images)
 # loop to detect the corners of the training images (automatically or manually)
 for fname in images:
     img = cv2.imread(fname)          
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) 
 
     # find the chess board corners
     ret, corners = cv2.findChessboardCorners(gray, pattern_size, None)
