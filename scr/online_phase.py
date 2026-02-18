@@ -25,7 +25,7 @@ if not ret:
 corners = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), criteria)
 
 # getting the camera extrinsic for run 1
-square_size = 0.017  
+square_size = 0.022
 objp = np.zeros((pattern_size[0] * pattern_size[1], 3), np.float32)
 objp[:, :2] = np.mgrid[0:pattern_size[0], 0:pattern_size[1]].T.reshape(-1, 2)
 objp *= square_size
@@ -53,5 +53,7 @@ k = cv2.waitKey(0) & 0xFF
 
 
 
+
+print("tvec:", tvec.ravel())
 
 

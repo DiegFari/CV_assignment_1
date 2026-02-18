@@ -62,7 +62,7 @@ def get_manual_corners(image: np.ndarray, pattern_size: tuple[int, int]):
     pts = np.array(clicked_points, dtype=np.float32)
     
     s = pts.sum(axis=1) # summing x + y for each couple 
-    diff = pts[:, 0] - pts[:, 1] # difference x - y for each couple 
+    diff = pts[:, 1] - pts[:, 0] # difference x - y for each couple 
 
     tl_idx = np.argmin(s)
     br_idx = np.argmax(s)
@@ -74,23 +74,29 @@ def get_manual_corners(image: np.ndarray, pattern_size: tuple[int, int]):
     tr = pts[tr_idx]
     bl = pts[bl_idx]
 
-    # interpolling the grid
+    # pattern_size = (cols, rows)
     cols, rows = pattern_size
 
-    grid = []
-    
-    for j in range(rows):
-        for i in range(cols):
-            u = i/(cols-1)
-            v = j/(rows-1)
-            top = (1 - u) * tl + u * tr
-            bottom = (1 - u) * bl + u * br
-            p = (1 - v) * top + v * bottom
-            grid.append(p)
-    
-    corners = np.array(grid, dtype=np.float32)
-    corners = corners.reshape(-1, 1, 2)
+    # interpolling the grid
+    rows, cols = pattern_size
 
+    points = []
+
+    for row in range(pattern_size[1]):        # top → bottom
+        v = row / (pattern_size[1] - 1)
+
+        left = tl * (1 - v) + bl * v
+        right = tr * (1 - v) + br * v
+
+        for col in range(pattern_size[0]):    # left → right
+            u = col / (pattern_size[0] - 1)
+
+            p = left * (1 - u) + right * u
+            points.append(p)
+    
+    corners = np.array(points, dtype=np.float32).reshape(-1, 1, 2)
+    corners = corners.reshape(-1, 1, 2)
+    print("TL:", tl, "TR:", tr, "BR:", br, "BL:", bl)
     return corners 
 
 
@@ -103,7 +109,7 @@ objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane
 
 pattern_size = (9, 6) # number of intern corners are squares -1, so for our chessboard is 9, 6
-square_size = 0.017 # lenght of the squares converted to meters 
+square_size = 0.022 # lenght of the squares converted to meters 
 
 # creating an empty 3d matrix of the chessboard 
 objp = np.zeros((pattern_size[0]*pattern_size[1], 3), np.float32) 
@@ -129,7 +135,7 @@ for fname in images:
     else:
         print(f"{fname}: manual annotation needed")
         corners2 = get_manual_corners(img, pattern_size)  
-        print(corners2.shape)
+        #print(corners2.shape)
         if corners2 is not None: 
             corners2 = cv2.cornerSubPix(gray, corners2, (11,11), (-1,-1), criteria)  
         if corners2 is None:
@@ -137,7 +143,7 @@ for fname in images:
             continue
         else:
             print("OK:", fname)
-
+    print(corners2[0], corners2[-1])    
     imgpoints.append(corners2)
     objpoints.append(objp)
 
@@ -238,3 +244,4 @@ def do_calibration(name, obj, img):
 do_calibration("run1_all_images", run1_obj, run1_img)
 do_calibration("run2_5auto_5manual", run2_obj, run2_img)
 do_calibration("run3_5auto_only", run3_obj, run3_img)
+
