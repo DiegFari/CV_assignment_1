@@ -120,7 +120,9 @@ print("Found images:", images)
 
 # loop to detect the corners of the training images (automatically or manually)
 for fname in images:
-    img = cv2.imread(fname)          
+    img = cv2.imread(fname)    
+    h, w = img.shape[:2]
+    print("Image resolution:", w, "x", h)      
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) 
 
     # find the chess board corners

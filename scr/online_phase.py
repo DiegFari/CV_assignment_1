@@ -11,11 +11,13 @@ calibration_files = [
 ]
 
 for calib_file in calibration_files:
-    print("\n=== Running:", calib_file, "===")
+    print(calib_file)
 
     data = np.load(calib_file)
     K_1 = data["cameraMatrix"]
     dist_1 = data["distCoeffs"]
+
+    print(K_1)
 
 
     # detecting corners automatically for the test image 
@@ -23,6 +25,8 @@ for calib_file in calibration_files:
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
     img = cv2.imread("data/test_image/test.jpg")
+    h, w = img.shape[:2]
+    print("Image resolution:", w, "x", h) 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 
