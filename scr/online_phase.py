@@ -35,7 +35,7 @@ for calib_file in calibration_files:
 
     corners = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), criteria)
 
-    # getting the camera extrinsic for run 1
+    # getting the camera extrinsic 
     square_size = 0.022
     objp = np.zeros((pattern_size[0] * pattern_size[1], 3), np.float32)
     objp[:, :2] = np.mgrid[0:pattern_size[0], 0:pattern_size[1]].T.reshape(-1, 2)
@@ -102,31 +102,33 @@ for calib_file in calibration_files:
     top_face_obj = cube[4:8]
     top_center_obj = top_face_obj.mean(axis=0) # get a central point of the top of the cube 
 
+    # now we have to convert the 3d point in the cebnter in terms of camera coordinates 
     R, _ = cv2.Rodrigues(rvec)  
     Xw = top_center_obj.reshape(3, 1) 
     Xc = R @ Xw + tvec
 
-    dist_m = float(np.linalg.norm(Xc))
+    dist_m = float(np.linalg.norm(Xc)) # this computes the distance from the camera (0, 0, 0) using th euclinean norm
 
-    print("top-center camera coords:", Xc.ravel())
-    print("distance (m):", dist_m)
-
+    # mapping the brightness value from 255 at distance 0 to 0 at diatance 4 meters 
     V = int(np.clip(255 * (1.0 - dist_m / 4.0), 0, 255))
-    n_w = np.array([0, 0, 1]).reshape(3,1)
-    n_c = R @ n_w
 
-    z_cam = np.array([0,0,1]).reshape(3,1)
+    # orientation
+    n_w = np.array([0, 0, 1]).reshape(3,1) # normal plane 
+    n_c = R @ n_w # turning it inton camera coordinates 
 
-    dot = (n_c.T @ z_cam).item()
+    z_cam = np.array([0,0,1]).reshape(3,1) 
+
+    dot = (n_c.T @ z_cam).item() # using the dot product to calculate orientation
+    # finding the cos
     cos_theta = dot / (np.linalg.norm(n_c) * np.linalg.norm(z_cam))
     cos_theta = np.clip(cos_theta, -1.0, 1.0)
-    cos_theta = abs(cos_theta)   # robustness
+    cos_theta = abs(cos_theta)   
     theta = float(np.degrees(np.arccos(cos_theta)))
 
-
+    # finally clipping it into a rane between 179 and 0 based on the orientation
     H = int(np.clip(179 * (1.0 - theta / 45.0), 0, 179))
 
-    S = 255
+    S = 255 # saturation is fixed 
 
     hsv_color = np.uint8([[[H, S, V]]])
     bgr_color = cv2.cvtColor(hsv_color, cv2.COLOR_HSV2BGR)[0,0]
