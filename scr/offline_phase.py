@@ -243,10 +243,12 @@ do_calibration("run3_5auto_only", run3_obj, run3_img)
 
 # now we are gonna implement choice task 4
 
-
 print("\nChoice 4: subset stability\n")
 
 def subset_test(objpoints_all, imgpoints_all, image_size, subset_size, trials):
+
+    # this function performs an estimation of how stable the parameters of the cakibration are by recalibrating on subsets 
+
     n = len(objpoints_all)
 
     fx_vals = []
@@ -257,18 +259,20 @@ def subset_test(objpoints_all, imgpoints_all, image_size, subset_size, trials):
     for _ in range(trials):
         idx = np.random.choice(n, subset_size, replace=False)
 
+        # getting objpoint sand imgpoints of the subsets 
         obj_sub = [objpoints_all[i] for i in idx]
         img_sub = [imgpoints_all[i] for i in idx]
 
-        rms, K, dist, rvecs, tvecs = cv2.calibrateCamera(
-            obj_sub, img_sub, image_size, None, None
-        )
+        # calibrate with the subset
+        rms, K, dist, rvecs, tvecs = cv2.calibrateCamera(obj_sub, img_sub, image_size, None, None)
 
+        # getting the values from the matrix K 
         fx_vals.append(K[0,0])
         fy_vals.append(K[1,1])
         cx_vals.append(K[0,2])
         cy_vals.append(K[1,2])
 
+    # printing the results 
     print(f"\nSubset size: {subset_size}, Trials: {trials}")
     print("fx: mean =", np.mean(fx_vals), "std =", np.std(fx_vals))
     print("fy: mean =", np.mean(fy_vals), "std =", np.std(fy_vals))
