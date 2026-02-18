@@ -214,9 +214,7 @@ for fname, objp_i, imgp_i in zip(images, objpoints, imgpoints):
 # This function calibrates the camera and also provides an estimation of the intrinsic values (e.g. the standard deviation) for choice task 4
 def do_calibration(name, obj, img):
 
-    ret, mtx, dist, rvecs, tvecs, std_intr, std_ext, per_view_err = cv2.calibrateCameraExtended(
-        obj, img, gray.shape[::-1], None, None
-    )
+    ret, mtx, dist, rvecs, tvecs, std_intr, std_ext, per_view_err = cv2.calibrateCameraExtended(obj, img, gray.shape[::-1], None, None)
 
     print(f"\n{name}")
     print("Images used:", len(obj))
@@ -252,5 +250,38 @@ def calib_for_choice_4(obj_list, img_list, image_size):
     return rms, K[0,0], K[1,1], K[0,2], K[1,2]
 
 
+def subset_confidence(objpoints_all, imgpoints_all, image_size, subset_size=10, trials=50, seed=0):
+    rng = np.random.default_rng(seed)
+    n = len(objpoints_all)
 
+    fx_list, fy_list, cx_list, cy_list, rms_list = [], [], [], [], []
 
+    for _ in range(trials):
+        idx = rng.choice(n, size=subset_size, replace=False)
+        obj_sub = [objpoints_all[i] for i in idx]
+        img_sub = [imgpoints_all[i] for i in idx]
+
+        rms, fx, fy, cx, cy = calib_for_choice_4(obj_sub, img_sub, image_size)
+        rms_list.append(rms)
+        fx_list.append(fx); fy_list.append(fy); cx_list.append(cx); cy_list.append(cy)
+
+    def summarize(x):
+        x = np.array(x)
+        return {
+            "mean": float(x.mean()),
+            "std": float(x.std(ddof=1)),
+        }
+
+    return {"subset_size": subset_size, "trials": trials, "rms": summarize(rms_list), "fx": summarize(fx_list), "fy": summarize(fy_list), "cx": summarize(cx_list), "cy": summarize(cy_list),}
+
+    print("Choice 4: subset confidence = \n")
+
+conf_25 = subset_confidence(objpoints, imgpoints, gray.shape[::-1], subset_size=25, trials=40, seed=1)
+conf_10 = subset_confidence(objpoints, imgpoints, gray.shape[::-1], subset_size=10, trials=60, seed=2)
+conf_5  = subset_confidence(objpoints, imgpoints, gray.shape[::-1], subset_size=5,  trials=80, seed=3)
+
+for conf in [conf_25, conf_10, conf_5]:
+    print("\nSubset size:", conf["subset_size"], "Trials:", conf["trials"])
+    for k in ["fx","fy","cx","cy"]:
+        s = conf[k]
+        print(f"{k}: mean={s['mean']:.2f}, std={s['std']:.2f}, 95%CI=[{s['ci2.5']:.2f},{s['ci97.5']:.2f}]")
