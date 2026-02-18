@@ -46,7 +46,6 @@ for calib_file in calibration_files:
     axis = np.float32([[0, 0, 0], [axis_lenght,0,0], [0,axis_lenght,0], [0,0,-axis_lenght]]).reshape(-1,3)
 
     ok, rvec, tvec = cv2.solvePnP(objp, corners, K_1, dist_1)
-    print("tvec:", tvec.ravel())
 
     # projecting the 3d points on the image
     imgpts, jac = cv2.projectPoints(axis, rvec, tvec, K_1, dist_1)
@@ -145,9 +144,9 @@ for calib_file in calibration_files:
                 f"{dist_m:.2f} m",
                 (center_img[0] + 10, center_img[1] - 10),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
+                1,
                 (255,255,255),
-                2)
+                3)
 
     cv2.imshow(f"final_{calib_file}", cv2.resize(out, (768, 1024)))
     cv2.waitKey(0)

@@ -3,10 +3,8 @@
 
 import os
 import sys
-
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, PROJECT_ROOT)
-
 import cv2
 import numpy as np
 import glob
@@ -212,7 +210,7 @@ for fname, objp_i, imgp_i in zip(images, objpoints, imgpoints):
         auto_counter += 1
 
 
-# This function calibrates the camera and also provides an estimation of the intrinsic values (e.g. the standard deviation) for choice task 4
+# This function calibrates the camera and also provides an estimation of the intrinsic values (e.g. the standard deviation) 
 def do_calibration(name, obj, img):
 
     ret, mtx, dist, rvecs, tvecs, std_intr, std_ext, per_view_err = cv2.calibrateCameraExtended(obj, img, gray.shape[::-1], None, None)
@@ -245,44 +243,39 @@ do_calibration("run3_5auto_only", run3_obj, run3_img)
 
 # now we are gonna implement choice task 4
 
-def calib_for_choice_4(obj_list, img_list, image_size):
-    # this function returns in order the fxl fy, cx, cy of the performed calibration
-    rms, K, dist, rvecs, tvecs = cv2.calibrateCamera(obj_list, img_list, image_size, None, None)
-    return rms, K[0,0], K[1,1], K[0,2], K[1,2]
 
+print("\nChoice 4: subset stability\n")
 
-def subset_confidence(objpoints_all, imgpoints_all, image_size, subset_size=10, trials=50, seed=0):
-    rng = np.random.default_rng(seed)
+def subset_test(objpoints_all, imgpoints_all, image_size, subset_size, trials):
     n = len(objpoints_all)
 
-    fx_list, fy_list, cx_list, cy_list, rms_list = [], [], [], [], []
+    fx_vals = []
+    fy_vals = []
+    cx_vals = []
+    cy_vals = []
 
     for _ in range(trials):
-        idx = rng.choice(n, size=subset_size, replace=False)
+        idx = np.random.choice(n, subset_size, replace=False)
+
         obj_sub = [objpoints_all[i] for i in idx]
         img_sub = [imgpoints_all[i] for i in idx]
 
-        rms, fx, fy, cx, cy = calib_for_choice_4(obj_sub, img_sub, image_size)
-        rms_list.append(rms)
-        fx_list.append(fx); fy_list.append(fy); cx_list.append(cx); cy_list.append(cy)
+        rms, K, dist, rvecs, tvecs = cv2.calibrateCamera(
+            obj_sub, img_sub, image_size, None, None
+        )
 
-    def summarize(x):
-        x = np.array(x)
-        return {
-            "mean": float(x.mean()),
-            "std": float(x.std(ddof=1)),
-        }
+        fx_vals.append(K[0,0])
+        fy_vals.append(K[1,1])
+        cx_vals.append(K[0,2])
+        cy_vals.append(K[1,2])
 
-    return {"subset_size": subset_size, "trials": trials, "rms": summarize(rms_list), "fx": summarize(fx_list), "fy": summarize(fy_list), "cx": summarize(cx_list), "cy": summarize(cy_list),}
+    print(f"\nSubset size: {subset_size}, Trials: {trials}")
+    print("fx: mean =", np.mean(fx_vals), "std =", np.std(fx_vals))
+    print("fy: mean =", np.mean(fy_vals), "std =", np.std(fy_vals))
+    print("cx: mean =", np.mean(cx_vals), "std =", np.std(cx_vals))
+    print("cy: mean =", np.mean(cy_vals), "std =", np.std(cy_vals))
 
-    print("Choice 4: subset confidence = \n")
 
-conf_25 = subset_confidence(objpoints, imgpoints, gray.shape[::-1], subset_size=25, trials=40, seed=1)
-conf_10 = subset_confidence(objpoints, imgpoints, gray.shape[::-1], subset_size=10, trials=60, seed=2)
-conf_5  = subset_confidence(objpoints, imgpoints, gray.shape[::-1], subset_size=5,  trials=80, seed=3)
-
-for conf in [conf_25, conf_10, conf_5]:
-    print("\nSubset size:", conf["subset_size"], "Trials:", conf["trials"])
-    for k in ["fx","fy","cx","cy"]:
-        s = conf[k]
-        print(f"{k}: mean={s['mean']:.2f}, std={s['std']:.2f}, 95%CI=[{s['ci2.5']:.2f},{s['ci97.5']:.2f}]")
+subset_test(objpoints, imgpoints, gray.shape[::-1], 25, 40)
+subset_test(objpoints, imgpoints, gray.shape[::-1], 10, 60)
+subset_test(objpoints, imgpoints, gray.shape[::-1], 5, 80)
