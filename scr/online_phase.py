@@ -61,7 +61,7 @@ for calib_file in calibration_files:
         return img
 
     copy = draw(img, imgpts)
-    cv2.imshow(f'drawn image {calib_file}',copy)
+    cv2.imshow(f'drawn image {calib_file}',cv2.resize(copy, (768, 1024)))
     k = cv2.waitKey(0) & 0xFF
 
     # now draweing the cube
@@ -91,7 +91,7 @@ for calib_file in calibration_files:
     out = draw(out, imgpts)
     out = draw_cube(out, imgpts_cube)
 
-    cv2.imshow(f"axes + cube {calib_file}", out)
+    cv2.imshow(f"axes + cube {calib_file}", cv2.resize(out, (768, 1024)))
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
@@ -149,7 +149,7 @@ for calib_file in calibration_files:
                 (255,255,255),
                 2)
 
-    cv2.imshow(f"final_{calib_file}", out)
+    cv2.imshow(f"final_{calib_file}", cv2.resize(out, (768, 1024)))
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     
